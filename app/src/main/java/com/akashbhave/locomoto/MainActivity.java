@@ -1,9 +1,12 @@
 package com.akashbhave.locomoto;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -14,18 +17,16 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 import io.cloudboost.CloudApp;
 import io.cloudboost.CloudException;
 import io.cloudboost.CloudObject;
-import io.cloudboost.CloudObjectCallback;
 import io.cloudboost.CloudUser;
 import io.cloudboost.CloudUserCallback;
 
 
 public class MainActivity extends AppCompatActivity {
 
-    CloudObject notes = new CloudObject("Notes");
+    SharedPreferences sharedPreferences;
 
     TextView roleDescView;
     TextView selectView;
@@ -54,13 +55,11 @@ public class MainActivity extends AppCompatActivity {
                         public void done(CloudUser user, CloudException e) throws CloudException {
                             if (e == null) {
                                 Log.i("User Sign In", "Role: " + userRole);
-                                notes.set("currentUser", user.getUserName());
-                                notes.save(new CloudObjectCallback() {
-                                    @Override
-                                    public void done(CloudObject x, CloudException t) throws CloudException {
-                                        redirectUser();
-                                    }
-                                });
+
+                                // Puts in a SharedPreferences that user has already logged in
+                                sharedPreferences.edit().putBoolean("isUserIn", true).apply();
+                                sharedPreferences.edit().putString("role", userRole).apply();
+                                redirectUser();
                             } else {
                                 e.printStackTrace();
                             }
@@ -78,7 +77,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if(!toastMessage.equals("")) Toast.makeText(getApplicationContext(), toastMessage, Toast.LENGTH_SHORT).show();
+            if (!toastMessage.equals(""))
+                Toast.makeText(getApplicationContext(), toastMessage, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void redirectUser() {
-        if(CloudUser.getcurrentUser().get("role").equals("rider")) {
+        if (sharedPreferences.getString("role", "").equals("rider")) {
             Log.i("Rider", "Redirect Map");
             Intent toRiderMap = new Intent(getApplicationContext(), YourLocation.class);
             startActivity(toRiderMap);
@@ -106,11 +106,10 @@ public class MainActivity extends AppCompatActivity {
         // Initializes the app in the databases
         CloudApp.init("ktdffagvxbnq", "08e13453-be8b-44ec-8b3e-cd8f4f5fd31c");
 
-        if(notes.get("currentUser").equals("user")) {
-            redirectUser();
-        } else {
-
-        }
+        // Checks to see if user has already opened app and set up
+        sharedPreferences = this.getSharedPreferences(getPackageName(), MODE_PRIVATE);
+        boolean isUserIn = sharedPreferences.getBoolean("isUserIn", false);
+        if (isUserIn) redirectUser();
 
         Typeface OpenSans = Typeface.createFromAsset(getAssets(), "fonts/OpenSans.ttf");
 
