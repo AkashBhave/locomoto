@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Initializes the app in the databases
-        CloudApp.init("ktdffagvxbnq", "35281bf3-ebd5-4370-8014-a915da4aaf98");
+        CloudApp.init("ktdffagvxbnq", "08e13453-be8b-44ec-8b3e-cd8f4f5fd31c");
 
         if(notes.get("currentUser").equals("user")) {
             redirectUser();
