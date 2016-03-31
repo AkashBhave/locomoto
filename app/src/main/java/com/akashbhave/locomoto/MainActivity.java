@@ -17,6 +17,8 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.UUID;
+
 import io.cloudboost.CloudApp;
 import io.cloudboost.CloudException;
 import io.cloudboost.CloudObject;
@@ -46,7 +48,10 @@ public class MainActivity extends AppCompatActivity {
             try {
                 if (roleSelected) {
                     CloudUser aUser = new CloudUser();
-                    aUser.setUserName("user");
+
+                    // Creates a random id/username for each user
+                    final String id = UUID.randomUUID().toString().replaceAll("-", "");
+                    aUser.setUserName(id);
                     aUser.setPassword("pass");
                     aUser.setEmail("");
                     aUser.set("role", userRole);
@@ -59,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
                                 // Puts in a SharedPreferences that user has already logged in
                                 sharedPreferences.edit().putBoolean("isUserIn", true).apply();
                                 sharedPreferences.edit().putString("role", userRole).apply();
+                                sharedPreferences.edit().putString("currentUser", id).apply();
                                 redirectUser();
                             } else {
                                 e.printStackTrace();

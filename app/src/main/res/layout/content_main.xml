@@ -70,7 +70,7 @@
         android:textColor="#fdf9f0"
         android:padding="10dp"
         android:textSize="20sp"
-        android:background="@drawable/roundedbutton"
+        android:background="@drawable/startbutton"
         android:layout_below="@+id/radioGroup"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="23dp"

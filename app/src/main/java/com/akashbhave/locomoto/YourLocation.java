@@ -1,12 +1,18 @@
 package com.akashbhave.locomoto;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -15,12 +21,68 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import io.cloudboost.CloudException;
+import io.cloudboost.CloudObject;
+import io.cloudboost.CloudObjectCallback;
+
 public class YourLocation extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
     private GoogleMap mMap;
 
     LocationManager locationManager;
     String provider;
+
+    TextView requestStatusView;
+    Button requestButton;
+
+    // If user's request is still watner
+    boolean requestActive = false;
+
+    SharedPreferences sharedPreferences;
+
+    public class DownloadTask extends AsyncTask<String, Void, Void> {
+
+        boolean resultGood = false;
+
+        @Override
+        protected Void doInBackground(String... params) {
+            try {
+                CloudObject requestsObject = new CloudObject("Requests");
+                requestsObject.set("reqUsername", sharedPreferences.getString("currentUser", ""));
+                requestsObject.save(new CloudObjectCallback() {
+                    @Override
+                    public void done(CloudObject x, CloudException t) throws CloudException {
+                        Log.i("Rider Requester", "Saved");
+                        resultGood = true;
+                    }
+                });
+            } catch (CloudException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if(resultGood) {
+                requestStatusView.setText("Finding a driver...");
+                requestButton.setText("Cancel Request");
+                requestActive = true;
+            }
+        }
+    }
+
+    public void requestRide(View view) {
+        if(!requestActive) {
+            requestStatusView.setVisibility(View.VISIBLE);
+            Log.i("Rider Map", "Ride Requested");
+            DownloadTask requestRideTask = new DownloadTask();
+            requestRideTask.execute("");
+        } else {
+            // See who gave the request
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,9 +93,15 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        requestStatusView = (TextView) findViewById(R.id.requestStatusView);
+        requestButton = (Button) findViewById(R.id.requestButton);
+
+        sharedPreferences = this.getSharedPreferences(getPackageName(), MODE_PRIVATE);
+
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         provider = locationManager.getBestProvider(new Criteria(), false);
 
+        // All location services
         locationManager.requestLocationUpdates(provider, 400, 1, this);
 
         try {
