@@ -21,6 +21,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import io.cloudboost.CloudException;
+import io.cloudboost.CloudGeoPoint;
 import io.cloudboost.CloudObject;
 import io.cloudboost.CloudObjectArrayCallback;
 import io.cloudboost.CloudObjectCallback;
@@ -32,6 +33,8 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
 
     LocationManager locationManager;
     String provider;
+    // For saving the user's location
+    Location usersCurrentLocation;
 
     TextView requestStatusView;
     Button requestButton;
@@ -47,7 +50,6 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
 
         boolean resultGood = false;
 
-        String type = "";
 
         @Override
         protected Void doInBackground(String... params) {
@@ -65,6 +67,8 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
                 } catch (CloudException e) {
                     e.printStackTrace();
                 }
+
+
             } else if (downloadTaskType.equals("cancelRequest")) {
                 try {
                     // See who gave the request
@@ -95,6 +99,36 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
                 } catch (CloudException e) {
                     e.printStackTrace();
                 }
+
+
+            } else if (downloadTaskType.equals("saveLocation")) {
+                try {
+                    final CloudGeoPoint riderLocation = new CloudGeoPoint(usersCurrentLocation.getLatitude(), usersCurrentLocation.getLongitude());
+                    // Puts the users location into its appropriate column
+                    CloudQuery userQuery = new CloudQuery("Requests");
+                    userQuery.equalTo("reqUsername", sharedPreferences.getString("currentUser", ""));
+                    userQuery.find(new CloudObjectArrayCallback() {
+                        @Override
+                        public void done(CloudObject[] x, CloudException t) throws CloudException {
+                            if (x != null) {
+                                for (CloudObject object : x) {
+                                    object.set("reqLocation", riderLocation);
+                                    object.save(new CloudObjectCallback() {
+                                        @Override
+                                        public void done(CloudObject x, CloudException t) throws CloudException {
+                                            Log.i("Rider's Location", "Saved");
+                                            resultGood = true;
+                                        }
+                                    });
+                                }
+                            } else {
+                                t.printStackTrace();
+                            }
+                        }
+                    });
+                } catch (CloudException e) {
+                    e.printStackTrace();
+                }
             }
             return null;
         }
@@ -107,9 +141,13 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
                     requestStatusView.setText("Finding a driver...");
                     requestButton.setText("Cancel Request");
                     requestActive = true;
+
                 } else if (downloadTaskType.equals("cancelRequest")) {
                     requestStatusView.setVisibility(View.INVISIBLE);
                     requestButton.setText("Request Ride");
+
+                } else if (downloadTaskType.equals("saveLocation")) {
+
                 }
             }
         }
@@ -156,6 +194,12 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
             if (location != null) {
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 10));
                 mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("Your Location"));
+                if(requestActive) {
+                    usersCurrentLocation = location;
+                    DownloadTask saveLocationTask = new DownloadTask();
+                    downloadTaskType = "saveLocation";
+                    saveLocationTask.execute("");
+                }
             }
         } catch (NullPointerException n) {
 
@@ -193,6 +237,14 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
         mMap.clear();
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 10));
         mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("Your Location"));
+
+        // Updates user's location in the database
+        if(requestActive) {
+            usersCurrentLocation = location;
+            DownloadTask saveLocationTask = new DownloadTask();
+            downloadTaskType = "saveLocation";
+            saveLocationTask.execute("");
+        }
     }
 
     @Override
