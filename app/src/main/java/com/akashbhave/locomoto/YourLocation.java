@@ -1,14 +1,13 @@
 package com.akashbhave.locomoto;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -23,7 +22,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import io.cloudboost.CloudException;
 import io.cloudboost.CloudObject;
+import io.cloudboost.CloudObjectArrayCallback;
 import io.cloudboost.CloudObjectCallback;
+import io.cloudboost.CloudQuery;
 
 public class YourLocation extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
@@ -35,29 +36,65 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
     TextView requestStatusView;
     Button requestButton;
 
-    // If user's request is still watner
+    // If user's request is still wanted
     boolean requestActive = false;
 
     SharedPreferences sharedPreferences;
+
+    String downloadTaskType = "";
 
     public class DownloadTask extends AsyncTask<String, Void, Void> {
 
         boolean resultGood = false;
 
+        String type = "";
+
         @Override
         protected Void doInBackground(String... params) {
-            try {
-                CloudObject requestsObject = new CloudObject("Requests");
-                requestsObject.set("reqUsername", sharedPreferences.getString("currentUser", ""));
-                requestsObject.save(new CloudObjectCallback() {
-                    @Override
-                    public void done(CloudObject x, CloudException t) throws CloudException {
-                        Log.i("Rider Requester", "Saved");
-                        resultGood = true;
-                    }
-                });
-            } catch (CloudException e) {
-                e.printStackTrace();
+            if (downloadTaskType.equals("request")) {
+                try {
+                    CloudObject requestsObject = new CloudObject("Requests");
+                    requestsObject.set("reqUsername", sharedPreferences.getString("currentUser", ""));
+                    requestsObject.save(new CloudObjectCallback() {
+                        @Override
+                        public void done(CloudObject x, CloudException t) throws CloudException {
+                            Log.i("Rider Requester", "Saved");
+                            resultGood = true;
+                        }
+                    });
+                } catch (CloudException e) {
+                    e.printStackTrace();
+                }
+            } else if (downloadTaskType.equals("cancelRequest")) {
+                try {
+                    // See who gave the request
+                    CloudQuery userQuery = new CloudQuery("Requests");
+                    userQuery.equalTo("reqUsername", sharedPreferences.getString("currentUser", ""));
+                    userQuery.find(new CloudObjectArrayCallback() {
+                        @Override
+                        public void done(CloudObject[] x, CloudException t) throws CloudException {
+                            if (x != null) {
+                                for (CloudObject object : x) {
+                                    object.delete(new CloudObjectCallback() {
+                                        @Override
+                                        public void done(CloudObject x, CloudException t) throws CloudException {
+                                            if (x != null) {
+                                                Log.i("Request", "Deleted");
+                                                resultGood = true;
+                                            } else {
+                                                t.printStackTrace();
+                                            }
+                                        }
+                                    });
+                                }
+                            } else {
+                                t.printStackTrace();
+                            }
+                        }
+                    });
+                } catch (CloudException e) {
+                    e.printStackTrace();
+                }
             }
             return null;
         }
@@ -65,22 +102,32 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if(resultGood) {
-                requestStatusView.setText("Finding a driver...");
-                requestButton.setText("Cancel Request");
-                requestActive = true;
+            if (resultGood) {
+                if (downloadTaskType.equals("request")) {
+                    requestStatusView.setText("Finding a driver...");
+                    requestButton.setText("Cancel Request");
+                    requestActive = true;
+                } else if (downloadTaskType.equals("cancelRequest")) {
+                    requestStatusView.setVisibility(View.INVISIBLE);
+                    requestButton.setText("Request Ride");
+                }
             }
         }
     }
 
     public void requestRide(View view) {
-        if(!requestActive) {
+        if (!requestActive) {
             requestStatusView.setVisibility(View.VISIBLE);
+            downloadTaskType = "request";
             Log.i("Rider Map", "Ride Requested");
             DownloadTask requestRideTask = new DownloadTask();
             requestRideTask.execute("");
         } else {
-            // See who gave the request
+            requestActive = false;
+            downloadTaskType = "cancelRequest";
+            Log.i("Rider Map", "Ride Cancelled");
+            DownloadTask cancelRequestTask = new DownloadTask();
+            cancelRequestTask.execute("");
         }
     }
 
