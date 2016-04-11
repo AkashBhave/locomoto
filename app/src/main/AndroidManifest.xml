@@ -13,7 +13,7 @@
          location permissions for the 'MyLocation' functionality. 
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -46,7 +46,11 @@
 
         <activity
             android:name=".YourLocation"
-            android:label="@string/title_activity_your_location"></activity>
+            android:label="@string/title_activity_your_location" />
+        <activity
+            android:name=".ViewAvailable"
+            android:label="@string/title_activity_view_available"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

@@ -100,7 +100,9 @@ public class MainActivity extends AppCompatActivity {
             Intent toRiderMap = new Intent(getApplicationContext(), YourLocation.class);
             startActivity(toRiderMap);
         } else {
-
+            Log.i("Driver", "Redirect Map");
+            Intent toDriverMap = new Intent(getApplicationContext(), ViewAvailable.class);
+            startActivity(toDriverMap);
         }
     }
 
