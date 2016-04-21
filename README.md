@@ -1,5 +1,5 @@
 # LocoMoto
-This is an Android application that has Uber-like features; close to a taxi service. _A user can be in one of two positions:_
+This is an Android application that has Uber-like features and is similar to a taxi service. _A user can be in one of two positions:_
 * __Rider:__ You can request a ride while looking at your location (which is updated very frrquently) on a map. Once you click the 'Request Ride' button, your request is stored on the online database. You also have the option to cancel your request, which will in turn remove it from the database.
 * __Driver:__ You can view available requests from other riders, which is all displayed in an [Android ListView](http://developer.android.com/guide/topics/ui/layout/listview.html), which is essentially a vertical table with clickable elements. The requests are in order from closest to farthest. Once you click on a request, you see the rider's postition relative to yours on a map.
 
