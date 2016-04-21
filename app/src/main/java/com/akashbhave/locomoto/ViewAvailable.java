@@ -32,7 +32,9 @@ import io.cloudboost.CloudQuery;
 public class ViewAvailable extends AppCompatActivity implements LocationListener {
 
     ListView listView;
-    ArrayList<String[]> lvContent;
+    ArrayList<String> usersNames = new ArrayList<String>();
+    ArrayList<Location> usersLocations = new ArrayList<Location>();
+    ArrayList<String> distances = new ArrayList<String>();
     ArrayAdapter arrayAdapter;
 
     LocationManager locationManager;
@@ -55,13 +57,22 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
         protected Void doInBackground(String... params) {
             if (downloadTaskType.equals("updateLocation")) {
                 try {
-                    final CloudGeoPoint driverLocation = new CloudGeoPoint(usersCurrentLocation.getLatitude(), usersCurrentLocation.getLongitude());
+                    final Location driverLocation = new Location(provider);
+                    driverLocation.setLatitude(usersCurrentLocation.getLatitude());
+                    driverLocation.setLongitude(usersCurrentLocation.getLongitude());
                     CloudQuery query = new CloudQuery("Requests");
                     query.orderByAsc("reqLocation");
+                    query.equalTo("driverUsername", null);
+                    query.setLimit(10);
                     query.find(new CloudObjectArrayCallback() {
                         @Override
                         public void done(CloudObject[] x, CloudException t) throws CloudException {
                             if(x != null) {
+                                resultGood = true;
+                                Log.i("Amount", String.valueOf(x.length));
+                                usersNames.clear();
+                                usersLocations.clear();
+                                distances.clear();
                                 for(CloudObject object : x) {
                                     try {
                                         JSONObject geopoint = new JSONObject(object.get("reqLocation").toString());
@@ -74,7 +85,16 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
                                         aUserLocation.setLatitude(latitude);
                                         aUserLocation.setLongitude(longitude);
 
-                                        Log.i("aUserLocation", aUserLocation.toString());
+                                        Log.i("User Lat/Lng", String.valueOf(aUserLocation.getLatitude()) + "/" + String.valueOf(aUserLocation.getLongitude()));
+
+                                        double distance = driverLocation.distanceTo(aUserLocation);
+                                        double distanceMiles = distance * 0.000621371;
+
+                                        usersNames.add(object.get("reqUsername").toString());
+                                        usersLocations.add(aUserLocation);
+                                        distances.add(String.valueOf(distanceMiles));
+                                        Log.i("Distance", String.valueOf(distanceMiles));
+
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
@@ -97,7 +117,8 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
             super.onPostExecute(aVoid);
             if (resultGood) {
                 if (downloadTaskType.equals("updateLocation")) {
-
+                    // Changes the listView
+                    arrayAdapter.notifyDataSetChanged();
                 }
             }
         }
@@ -140,19 +161,20 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
 
         }
 
+        usersNames.addAll(distances);
         listView = (ListView) findViewById(R.id.listView);
-        lvContent = new ArrayList<String[]>();
-        arrayAdapter = new ArrayAdapter<String[]>(this, android.R.layout.simple_list_item_2, android.R.id.text1, lvContent) {
+        arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_2, android.R.id.text1, usersNames) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
 
-                String[] entry = lvContent.get(position);
+                String entry1 = usersNames.get(position);
+                String entry2 = distances.get(position);
 
                 TextView text1 = (TextView) view.findViewById(android.R.id.text1);
                 TextView text2 = (TextView) view.findViewById(android.R.id.text2);
-                text1.setText(entry[0]);
-                text2.setText(entry[1]);
+                text1.setText(entry1);
+                text2.setText(entry2);
 
                 return view;
             }
@@ -200,4 +222,8 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
 
     }
 
+    @Override
+    public void onBackPressed() {
+        // Prevents the user from clicking the back button and returning to the signup page.
+    }
 }

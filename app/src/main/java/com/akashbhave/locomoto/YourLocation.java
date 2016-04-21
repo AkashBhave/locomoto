@@ -34,7 +34,7 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
     LocationManager locationManager;
     String provider;
     // For saving the user's location
-    Location usersCurrentLocation;
+    Location usersCurrentLocation = new Location(provider);
 
     TextView requestStatusView;
     Button requestButton;
@@ -55,11 +55,14 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
         protected Void doInBackground(String... params) {
             if (downloadTaskType.equals("request")) {
                 try {
+                    final CloudGeoPoint riderLocation = new CloudGeoPoint(usersCurrentLocation.getLatitude(), usersCurrentLocation.getLongitude());
                     CloudObject requestsObject = new CloudObject("Requests");
                     requestsObject.set("reqUsername", sharedPreferences.getString("currentUser", ""));
+                    requestsObject.set("reqLocation", riderLocation);
                     requestsObject.save(new CloudObjectCallback() {
                         @Override
                         public void done(CloudObject x, CloudException t) throws CloudException {
+                            Log.i("Rider's Location", "Saved");
                             Log.i("Rider Requester", "Saved");
                             resultGood = true;
                         }
@@ -192,9 +195,11 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
         try {
             Location location = locationManager.getLastKnownLocation(provider);
             if (location != null) {
+                usersCurrentLocation = location;
+                Log.i("Users Location", location.getLatitude() + " " + location.getLongitude());
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 10));
                 mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("Your Location"));
-                if(requestActive) {
+                if (requestActive) {
                     usersCurrentLocation = location;
                     DownloadTask saveLocationTask = new DownloadTask();
                     downloadTaskType = "saveLocation";
@@ -234,12 +239,13 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
+        Log.i("Users Updated Location", location.getLatitude() + " " + location.getLongitude());
         mMap.clear();
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 10));
         mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("Your Location"));
 
         // Updates user's location in the database
-        if(requestActive) {
+        if (requestActive) {
             usersCurrentLocation = location;
             DownloadTask saveLocationTask = new DownloadTask();
             downloadTaskType = "saveLocation";
@@ -260,5 +266,10 @@ public class YourLocation extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onProviderDisabled(String provider) {
 
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Prevents the user from clicking the back button and returning to the signup page.
     }
 }
