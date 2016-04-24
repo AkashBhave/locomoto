@@ -1,5 +1,6 @@
 package com.akashbhave.locomoto;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Criteria;
 import android.location.Location;
@@ -7,13 +8,12 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -27,12 +27,14 @@ import io.cloudboost.CloudException;
 import io.cloudboost.CloudGeoPoint;
 import io.cloudboost.CloudObject;
 import io.cloudboost.CloudObjectArrayCallback;
+import io.cloudboost.CloudObjectCallback;
 import io.cloudboost.CloudQuery;
 
 public class ViewAvailable extends AppCompatActivity implements LocationListener {
 
     ListView listView;
     ArrayList<String> usersNames = new ArrayList<String>();
+    ArrayList<String> actualNames = new ArrayList<String>();
     ArrayList<Location> usersLocations = new ArrayList<Location>();
     ArrayList<String> distances = new ArrayList<String>();
     ArrayAdapter arrayAdapter;
@@ -57,29 +59,62 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
         protected Void doInBackground(String... params) {
             if (downloadTaskType.equals("updateLocation")) {
                 try {
+                    CloudQuery putDriverLocation = new CloudQuery("User");
+                    putDriverLocation.equalTo("username", sharedPreferences.getString("currentUser", ""));
+                    putDriverLocation.find(new CloudObjectArrayCallback() {
+                        @Override
+                        public void done(CloudObject[] x, CloudException t) throws CloudException {
+                            if (x != null) {
+                                for (CloudObject object : x) {
+                                    String myBearing = String.valueOf(usersCurrentLocation.getBearing());
+                                    CloudGeoPoint location = new CloudGeoPoint(usersCurrentLocation.getLatitude(), usersCurrentLocation.getLongitude());
+                                    object.set("location", location);
+                                    object.set("bearing", myBearing);
+                                    object.save(new CloudObjectCallback() {
+                                        @Override
+                                        public void done(CloudObject x, CloudException t) throws CloudException {
+
+                                        }
+                                    });
+                                }
+                            } else {
+                                t.printStackTrace();
+                            }
+                        }
+                    });
+
                     final Location driverLocation = new Location(provider);
                     driverLocation.setLatitude(usersCurrentLocation.getLatitude());
                     driverLocation.setLongitude(usersCurrentLocation.getLongitude());
-                    CloudQuery query = new CloudQuery("Requests");
+
+                    // 'driverUsername' can be equal to one of two conditions (below)
+                    CloudQuery query1 = new CloudQuery("Requests");
+                    query1.equalTo("driverUsername", null);
+                    CloudQuery query2 = new CloudQuery("Requests");
+                    query2.equalTo("driverUsername", "");
+
+                    CloudQuery query = CloudQuery.or(query1, query2);
                     query.orderByAsc("reqLocation");
-                    query.equalTo("driverUsername", null);
                     query.setLimit(10);
                     query.find(new CloudObjectArrayCallback() {
                         @Override
                         public void done(CloudObject[] x, CloudException t) throws CloudException {
-                            if(x != null) {
+                            if (x != null) {
                                 resultGood = true;
                                 Log.i("Amount", String.valueOf(x.length));
                                 usersNames.clear();
                                 usersLocations.clear();
                                 distances.clear();
-                                for(CloudObject object : x) {
+                                for (CloudObject object : x) {
                                     try {
                                         JSONObject geopoint = new JSONObject(object.get("reqLocation").toString());
                                         // retrieve the coordinates
                                         String coordinates = geopoint.getString("coordinates").replace("[", "").replace("]", "");
-                                        Double latitude = Double.parseDouble(coordinates.split(",")[0]);
-                                        Double longitude = Double.parseDouble(coordinates.split(",")[1]);
+                                        String[] latLng = coordinates.split(",");
+                                        String stringLat = latLng[1].replace(",", "");
+                                        String stringLng = latLng[0].replace(",", "");
+                                        Double latitude = Double.parseDouble(stringLat);
+                                        Double longitude = Double.parseDouble(stringLng);
 
                                         Location aUserLocation = new Location(provider);
                                         aUserLocation.setLatitude(latitude);
@@ -88,9 +123,10 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
                                         Log.i("User Lat/Lng", String.valueOf(aUserLocation.getLatitude()) + "/" + String.valueOf(aUserLocation.getLongitude()));
 
                                         double distance = driverLocation.distanceTo(aUserLocation);
-                                        double distanceMiles = distance * 0.000621371;
+                                        double distanceMiles = Math.round((distance * 0.000621371) * 100) / 100;
 
                                         usersNames.add(object.get("reqUsername").toString());
+                                        actualNames.add(object.get("reqActualName").toString());
                                         usersLocations.add(aUserLocation);
                                         distances.add(String.valueOf(distanceMiles));
                                         Log.i("Distance", String.valueOf(distanceMiles));
@@ -99,7 +135,7 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
                                         e.printStackTrace();
                                     }
                                 }
-                            } else if(t != null) {
+                            } else if (t != null) {
                                 t.printStackTrace();
                             }
                         }
@@ -130,32 +166,22 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
         setContentView(R.layout.activity_view_available);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        sharedPreferences = this.getSharedPreferences(getPackageName(), MODE_PRIVATE);
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         provider = locationManager.getBestProvider(new Criteria(), false);
 
         // All location services
-        locationManager.requestLocationUpdates(provider , 400, 1, this);
+        locationManager.requestLocationUpdates(provider, 400, 1, this);
 
         requestActive = true;
         try {
             Location location = locationManager.getLastKnownLocation(provider);
-            if (location != null) {
-                if (requestActive) {
-                    usersCurrentLocation = location;
-                    DownloadTask saveLocationTask = new DownloadTask();
-                    downloadTaskType = "updateLocation";
-                    saveLocationTask.execute("");
-                }
+            if (requestActive) {
+                usersCurrentLocation = location;
+                DownloadTask saveLocationTask = new DownloadTask();
+                downloadTaskType = "updateLocation";
+                saveLocationTask.execute("");
             }
         } catch (NullPointerException n) {
 
@@ -168,7 +194,7 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
 
-                String entry1 = usersNames.get(position);
+                String entry1 = actualNames.get(position);
                 String entry2 = distances.get(position);
 
                 TextView text1 = (TextView) view.findViewById(android.R.id.text1);
@@ -181,6 +207,23 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
         };
 
         listView.setAdapter(arrayAdapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // Sends the clicked riders information to the 'ViewRiderLocation' activity
+                Intent viewLocationIntent = new Intent(getApplicationContext(), ViewRiderLocation.class);
+                viewLocationIntent.putExtra("riderUsername", usersNames.get(position));
+                viewLocationIntent.putExtra("riderLat", usersLocations.get(position).getLatitude());
+                viewLocationIntent.putExtra("riderLng", usersLocations.get(position).getLongitude());
+                viewLocationIntent.putExtra("driverLat", usersCurrentLocation.getLatitude());
+                viewLocationIntent.putExtra("driverLng", usersCurrentLocation.getLongitude());
+                viewLocationIntent.putExtra("driverUsername", sharedPreferences.getString("currentUser", ""));
+                startActivity(viewLocationIntent);
+                Log.i("Username", usersNames.get(position));
+                Log.i("Location", String.valueOf(usersLocations.get(position).getLatitude() + " " + usersLocations.get(position).getLongitude()));
+            }
+        });
     }
 
     @Override

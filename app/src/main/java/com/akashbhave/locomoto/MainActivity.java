@@ -1,18 +1,17 @@
 package com.akashbhave.locomoto;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,7 +20,6 @@ import java.util.UUID;
 
 import io.cloudboost.CloudApp;
 import io.cloudboost.CloudException;
-import io.cloudboost.CloudObject;
 import io.cloudboost.CloudUser;
 import io.cloudboost.CloudUserCallback;
 
@@ -32,11 +30,13 @@ public class MainActivity extends AppCompatActivity {
 
     TextView roleDescView;
     TextView selectView;
+    EditText nameInput;
     Button startButton;
     RadioGroup radioGroup;
 
     // If the user is a driver or a rider
     String userRole;
+    String userName;
     boolean roleSelected = false;
 
     public class DownloadTask extends AsyncTask<String, Void, Void> {
@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
                     aUser.setPassword("pass");
                     aUser.setEmail("");
                     aUser.set("role", userRole);
+                    aUser.set("actualName", userName);
                     aUser.signUp(new CloudUserCallback() {
                         @Override
                         public void done(CloudUser user, CloudException e) throws CloudException {
@@ -90,8 +91,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void getStarted(View view) throws CloudException {
-        DownloadTask registerUser = new DownloadTask();
-        registerUser.execute("");
+        userName = nameInput.getText().toString();
+        if (userName.length() > 5) {
+            DownloadTask registerUser = new DownloadTask();
+            registerUser.execute("");
+        } else {
+            Toast.makeText(MainActivity.this, "Your name must be at least 6 characters", Toast.LENGTH_LONG).show();
+        }
     }
 
     public void redirectUser() {
@@ -112,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Initializes the app in the databases
-        CloudApp.init("ktdffagvxbnq", "08e13453-be8b-44ec-8b3e-cd8f4f5fd31c");
+        CloudApp.init("izjqixzyfjbd", "2be811d8-124e-49da-ad43-6bac3ad5f28c");
 
         // Checks to see if user has already opened app and set up
         sharedPreferences = this.getSharedPreferences(getPackageName(), MODE_PRIVATE);
@@ -124,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
         roleDescView = (TextView) findViewById(R.id.roleDescView);
         roleDescView.setTypeface(OpenSans);
         selectView = (TextView) findViewById(R.id.selectView);
+        nameInput = (EditText) findViewById(R.id.nameInput);
         startButton = (Button) findViewById(R.id.startButton);
         radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {

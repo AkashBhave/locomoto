@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.akashbhave.locomoto.YourLocation">
+    tools:context="com.akashbhave.locomoto.YourLocation"
+    android:id="@+id/relativeLayout">
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
@@ -14,30 +15,12 @@
         android:layout_height="match_parent"
         tools:context="com.akashbhave.locomoto.YourLocation" />
 
-
-    <TextView
-        android:layout_width="100dp"
-        android:layout_height="60dp"
-        android:id="@+id/requestStatusView"
-        android:textSize="14sp"
-        android:textColor="#000000"
-        android:background="@drawable/statusview"
-        android:gravity="center_vertical|center_horizontal"
-        android:paddingRight="7dp"
-        android:paddingLeft="7dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:visibility="invisible" />
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="requestRide"
-        android:text="Request Ride"
-        android:id="@+id/requestButton"
+        android:text="Accept Request"
+        android:id="@+id/acceptReqButton"
+        android:onClick="acceptRequest"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
         android:layout_alignParentBottom="true"
@@ -47,5 +30,18 @@
         android:textColor="#ffffff"
         android:paddingTop="5dp"
         android:paddingBottom="5dp"
-        android:background="@drawable/request_button" />
+        android:background="@drawable/acceptrequest_button" />
+
+    <ImageButton
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:id="@+id/imageButton"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:src="@drawable/back"
+        android:scaleType="fitCenter"
+        android:background="@android:color/transparent"
+        android:onClick="goBack" />
+
 </RelativeLayout>

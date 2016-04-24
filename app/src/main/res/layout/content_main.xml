@@ -10,14 +10,13 @@
     android:background="#fdf9f0">
 
     <RadioGroup
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/radioGroup"
-        android:layout_marginLeft="35dp"
         android:layout_below="@+id/logo"
-        android:layout_toRightOf="@+id/selectView"
-        android:layout_toEndOf="@+id/selectView"
-        android:layout_marginStart="30dp">
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:paddingRight="50dp">
 
         <RadioButton
             android:layout_width="wrap_content"
@@ -59,7 +58,7 @@
         android:layout_below="@+id/logo"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginLeft="25dp"
+        android:layout_marginLeft="50dp"
         android:layout_marginTop="20dp" />
 
     <Button
@@ -71,17 +70,41 @@
         android:padding="10dp"
         android:textSize="20sp"
         android:background="@drawable/startbutton"
+        android:layout_marginTop="39dp"
+        android:onClick="getStarted"
         android:layout_below="@+id/radioGroup"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="23dp"
-        android:onClick="getStarted" />
+        android:layout_centerHorizontal="true" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/roleDescView"
-        android:layout_centerVertical="true"
+        android:textSize="17sp"
+        android:layout_marginTop="42dp"
+        android:layout_below="@+id/selectView"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter your name:"
+        android:id="@+id/enterView"
+        android:layout_below="@+id/roleDescView"
         android:layout_centerHorizontal="true"
-        android:textSize="17sp" />
+        android:layout_marginTop="65dp"
+        android:phoneNumber="true"
+        android:textSize="20sp"
+        android:textColor="#000000" />
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:ems="10"
+        android:id="@+id/nameInput"
+        android:layout_below="@+id/enterView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp" />
 
 </RelativeLayout>

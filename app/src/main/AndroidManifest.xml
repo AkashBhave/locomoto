@@ -50,7 +50,10 @@
         <activity
             android:name=".ViewAvailable"
             android:label="@string/title_activity_view_available"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".ViewRiderLocation"
+            android:label="@string/title_activity_view_rider_location"></activity>
     </application>
 
 </manifest>
