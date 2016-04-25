@@ -94,7 +94,7 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
                     query2.equalTo("driverUsername", "");
 
                     CloudQuery query = CloudQuery.or(query1, query2);
-                    query.orderByAsc("reqLocation");
+                    query.orderByDesc("reqLocation");
                     query.setLimit(10);
                     query.find(new CloudObjectArrayCallback() {
                         @Override
