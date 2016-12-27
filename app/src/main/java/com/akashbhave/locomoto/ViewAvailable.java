@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -172,7 +173,7 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
         provider = locationManager.getBestProvider(new Criteria(), false);
 
         // All location services
-        locationManager.requestLocationUpdates(provider, 400, 1, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 400, 1, this);
 
         requestActive = true;
         try {
@@ -262,11 +263,12 @@ public class ViewAvailable extends AppCompatActivity implements LocationListener
 
     @Override
     public void onProviderDisabled(String provider) {
-
     }
 
     @Override
     public void onBackPressed() {
         // Prevents the user from clicking the back button and returning to the signup page.
     }
+
+
 }

@@ -3,6 +3,7 @@ package com.akashbhave.locomoto;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +16,10 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.maps.GoogleMap;
 
 import java.util.UUID;
 
@@ -39,22 +44,21 @@ public class MainActivity extends AppCompatActivity {
     String userName;
     boolean roleSelected = false;
 
-    public class DownloadTask extends AsyncTask<String, Void, Void> {
-
+    class DTask extends AsyncTask<String, Void, Void> {
         String toastMessage = "";
 
         @Override
         protected Void doInBackground(String... params) {
             try {
-                if (roleSelected) {
+                if(roleSelected) {
                     CloudUser aUser = new CloudUser();
-
                     // Creates a random id/username for each user
                     final String id = UUID.randomUUID().toString().replaceAll("-", "");
-                    aUser.setUserName(id);
-                    aUser.setPassword("pass");
-                    aUser.setEmail("");
+                    aUser.set("username", id);
+                    aUser.set("password", "pass");
+                    aUser.set("email", "");
                     aUser.set("role", userRole);
+                    System.out.println(userRole);
                     aUser.set("actualName", userName);
                     aUser.signUp(new CloudUserCallback() {
                         @Override
@@ -75,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     toastMessage = "Please select a role";
                 }
-            } catch (CloudException e) {
-                e.printStackTrace();
+            } catch (Exception c) {
+                c.printStackTrace();
             }
             return null;
         }
@@ -84,8 +88,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if (!toastMessage.equals(""))
+            if (!toastMessage.equals("")) {
                 Toast.makeText(getApplicationContext(), toastMessage, Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -93,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     public void getStarted(View view) throws CloudException {
         userName = nameInput.getText().toString();
         if (userName.length() > 5) {
-            DownloadTask registerUser = new DownloadTask();
+            DTask registerUser = new DTask();
             registerUser.execute("");
         } else {
             Toast.makeText(MainActivity.this, "Your name must be at least 6 characters", Toast.LENGTH_LONG).show();
@@ -147,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
     }
 
 
@@ -171,4 +177,6 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
 }
